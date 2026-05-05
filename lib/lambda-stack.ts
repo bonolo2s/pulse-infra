@@ -19,6 +19,7 @@ export class PulseLambdaStack extends cdk.Stack {
       `),
       vpc: props.vpc,
       vpcSubnets: { subnetType: ec2.SubnetType.PUBLIC },
+      allowPublicSubnet: true,
     });
 
     const rule = new events.Rule(this, 'PulseHealthCheckSchedule', {
