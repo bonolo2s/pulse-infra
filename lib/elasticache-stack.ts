@@ -7,6 +7,12 @@ export class PulseElastiCacheStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: cdk.StackProps & { vpc: ec2.Vpc }) {
     super(scope, id, props);
 
+    const securityGroup = new ec2.SecurityGroup(this, 'PulseRedisSG', {
+      vpc: props.vpc,
+      description: 'Security group for Pulse Redis',
+      allowAllOutbound: false,
+    });
+
     const subnetGroup = new elasticache.CfnSubnetGroup(this, 'PulseRedisSubnetGroup', {
       description: 'Subnet group for Pulse Redis',
       subnetIds: props.vpc.isolatedSubnets.map(s => s.subnetId),
@@ -17,6 +23,7 @@ export class PulseElastiCacheStack extends cdk.Stack {
       engine: 'redis',
       numCacheNodes: 1,
       cacheSubnetGroupName: subnetGroup.ref,
+      vpcSecurityGroupIds: [securityGroup.securityGroupId],
     });
   }
 }
