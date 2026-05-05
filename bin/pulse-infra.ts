@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 import * as cdk from 'aws-cdk-lib';
-import { PulseVpcStack } from '../lib/vpc-stack'; //im wiring my vpc to my acc n region,how?
-
+import { PulseVpcStack } from '../lib/vpc-stack'; 
 const app = new cdk.App();
 
 new PulseVpcStack(app, 'PulseVpcStack', {
