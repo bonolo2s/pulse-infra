@@ -3,6 +3,12 @@ import * as cdk from 'aws-cdk-lib';
 import { PulseVpcStack } from '../lib/vpc-stack';
 import { PulseEcsStack } from '../lib/ecs-stack';
 import { PulseRdsStack } from '../lib/rds-stack';
+import { PulseElastiCacheStack } from '../lib/elasticache-stack';
+import { PulseLambdaStack } from '../lib/lambda-stack';
+import { PulseApiGatewayStack } from '../lib/apigateway-stack';
+import { PulseSnsStack } from '../lib/sns-stack';
+import { PulseSesStack } from '../lib/ses-stack';
+import { PulseObservabilityStack } from '../lib/observability-stack';
 
 const app = new cdk.App();
 
@@ -18,4 +24,30 @@ new PulseEcsStack(app, 'PulseEcsStack', {
 new PulseRdsStack(app, 'PulseRdsStack', {
   env: { account: '881005428470', region: 'eu-west-1' },
   vpc: PulseVpcStack_instance.vpc,
+});
+
+new PulseElastiCacheStack(app, 'PulseElastiCacheStack', {
+  env: { account: '881005428470', region: 'eu-west-1' },
+  vpc: PulseVpcStack_instance.vpc,
+});
+
+new PulseLambdaStack(app, 'PulseLambdaStack', {
+  env: { account: '881005428470', region: 'eu-west-1' },
+  vpc: PulseVpcStack_instance.vpc,
+});
+
+new PulseApiGatewayStack(app, 'PulseApiGatewayStack', {
+  env: { account: '881005428470', region: 'eu-west-1' },
+});
+
+new PulseSnsStack(app, 'PulseSnsStack', {
+  env: { account: '881005428470', region: 'eu-west-1' },
+});
+
+new PulseSesStack(app, 'PulseSesStack', {
+  env: { account: '881005428470', region: 'eu-west-1' },
+});
+
+new PulseObservabilityStack(app, 'PulseObservabilityStack', {
+  env: { account: '881005428470', region: 'eu-west-1' },
 });
