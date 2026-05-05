@@ -9,7 +9,7 @@ export class PulseVpcStack extends cdk.Stack {
     super(scope, id, props);
 
     this.vpc = new ec2.Vpc(this, 'PulseVpc', {
-      maxAzs: 2,
+      maxAzs: 2,// i need for backup when one availability zone is down.
       natGateways: 0,
       subnetConfiguration: [
         {
