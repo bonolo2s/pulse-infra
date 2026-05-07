@@ -14,7 +14,7 @@ export class PulseEcsStack extends cdk.Stack {
     });
 
     this.cluster.addCapacity('PulseEc2Capacity', {
- instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.MICRO),
+      instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.MICRO),
       minCapacity: 1,
       maxCapacity: 1,
     });
