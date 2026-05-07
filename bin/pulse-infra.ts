@@ -51,3 +51,5 @@ new PulseSesStack(app, 'PulseSesStack', {
 new PulseObservabilityStack(app, 'PulseObservabilityStack', {
   env: { account: '881005428470', region: 'eu-west-1' },
 });
+
+cdk.Tags.of(app).add('Project', 'Pulse');
