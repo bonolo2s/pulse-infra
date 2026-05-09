@@ -9,6 +9,7 @@ import { PulseApiGatewayStack } from '../lib/apigateway-stack';
 import { PulseSnsStack } from '../lib/sns-stack';
 import { PulseSesStack } from '../lib/ses-stack';
 import { PulseObservabilityStack } from '../lib/observability-stack';
+import { EventBridgeStack } from '../lib/eventbridge-stack';
 
 const app = new cdk.App();
 
@@ -31,9 +32,14 @@ new PulseElastiCacheStack(app, 'PulseElastiCacheStack', {
   vpc: PulseVpcStack_instance.vpc,
 });
 
-new PulseLambdaStack(app, 'PulseLambdaStack', {
+const pulseLambdaStack = new PulseLambdaStack(app, 'PulseLambdaStack', {
   env: { account: '881005428470', region: 'eu-west-1' },
   vpc: PulseVpcStack_instance.vpc,
+});
+
+new EventBridgeStack(app, 'PulseEventBridgeStack', {
+  env: { account: '881005428470', region: 'eu-west-1' },
+  healthCheckFunction: pulseLambdaStack.healthCheckFunction,
 });
 
 new PulseApiGatewayStack(app, 'PulseApiGatewayStack', {
