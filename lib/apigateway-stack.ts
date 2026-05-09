@@ -13,10 +13,6 @@ export class PulseApiGatewayStack extends cdk.Stack {
                 allowOrigins: apigateway.Cors.ALL_ORIGINS,
                 allowMethods: apigateway.Cors.ALL_METHODS,
             },
-            deployOptions: {
-                throttlingRateLimit: 100,
-                throttlingBurstLimit: 50,
-            },
         });
 
         const integration = new apigateway.HttpIntegration(
@@ -24,24 +20,37 @@ export class PulseApiGatewayStack extends cdk.Stack {
             { httpMethod: 'ANY', proxy: true }
         );
 
-        // Proxy all traffic to ECS
         api.root.addProxy({
             defaultIntegration: integration,
             anyMethod: true,
         });
 
-        // Rate limit login
         const identity = api.root.addResource('api').addResource('identity');
         const login = identity.addResource('login');
         login.addMethod('POST', integration, {
             methodResponses: [{ statusCode: '200' }],
         });
 
-        // Rate limit public status pages
         const statusPages = api.root.addResource('s');
         const slug = statusPages.addResource('{slug}');
         slug.addMethod('GET', integration, {
             methodResponses: [{ statusCode: '200' }],
         });
+
+        const cfnStage = api.deploymentStage.node.defaultChild as apigateway.CfnStage;
+        cfnStage.methodSettings = [
+            {
+                httpMethod: 'POST',
+                resourcePath: '/api/identity/login',
+                throttlingRateLimit: 2,
+                throttlingBurstLimit: 1,
+            },
+            {
+                httpMethod: 'GET',
+                resourcePath: '/s/{slug}',
+                throttlingRateLimit: 10,
+                throttlingBurstLimit: 5,
+            },
+        ];
     }
 }
