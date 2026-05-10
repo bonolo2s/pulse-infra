@@ -31,8 +31,9 @@ export class PulseApiGatewayStack extends cdk.Stack {
             methodResponses: [{ statusCode: '200' }],
         });
 
-        const statusPages = api.root.addResource('s');
-        const slug = statusPages.addResource('{slug}');
+        const statuspages = api.root.addResource('api').addResource('statuspages');
+        const publicPages = statuspages.addResource('public');
+        const slug = publicPages.addResource('{slug}');
         slug.addMethod('GET', integration, {
             methodResponses: [{ statusCode: '200' }],
         });
@@ -47,7 +48,7 @@ export class PulseApiGatewayStack extends cdk.Stack {
             },
             {
                 httpMethod: 'GET',
-                resourcePath: '/s/{slug}',
+                resourcePath: '/api/statuspages/public/{slug}',
                 throttlingRateLimit: 10,
                 throttlingBurstLimit: 5,
             },
