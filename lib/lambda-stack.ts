@@ -4,10 +4,15 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
 
+interface PulseLambdaStackProps extends cdk.StackProps {
+    vpc: ec2.Vpc;
+    environment: 'dev' | 'staging' | 'prod';
+}
+
 export class PulseLambdaStack extends cdk.Stack {
     public readonly healthCheckFunction: lambda.Function;
 
-    constructor(scope: Construct, id: string, props: cdk.StackProps & { vpc: ec2.Vpc }) {
+    constructor(scope: Construct, id: string, props: PulseLambdaStackProps) {
         super(scope, id, props);
 
         this.healthCheckFunction = new lambda.Function(this, 'PulseHealthCheck', {
@@ -21,6 +26,9 @@ export class PulseLambdaStack extends cdk.Stack {
             vpcSubnets: { subnetType: ec2.SubnetType.PUBLIC },
             allowPublicSubnet: true,
             timeout: cdk.Duration.seconds(30),
+            environment: {
+                ENVIRONMENT: props.environment,
+            },
         });
     }
 }
