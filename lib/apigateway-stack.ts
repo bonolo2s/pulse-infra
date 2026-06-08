@@ -2,12 +2,17 @@ import * as cdk from 'aws-cdk-lib';
 import * as apigateway from 'aws-cdk-lib/aws-apigateway';
 import { Construct } from 'constructs';
 
+interface PulseApiGatewayStackProps extends cdk.StackProps {
+    albDnsName: string;
+    environment: 'dev' | 'staging' | 'prod';
+}
+
 export class PulseApiGatewayStack extends cdk.Stack {
-    constructor(scope: Construct, id: string, props: cdk.StackProps & { albDnsName: string }) {
+    constructor(scope: Construct, id: string, props: PulseApiGatewayStackProps) {
         super(scope, id, props);
 
         const api = new apigateway.RestApi(this, 'PulseApi', {
-            restApiName: 'Pulse API',
+            restApiName: `Pulse API (${props.environment})`,
             description: 'API Gateway for Pulse endpoint monitoring platform',
             defaultCorsPreflightOptions: {
                 allowOrigins: apigateway.Cors.ALL_ORIGINS,
@@ -45,14 +50,14 @@ export class PulseApiGatewayStack extends cdk.Stack {
             {
                 httpMethod: 'POST',
                 resourcePath: '/api/identity/login',
-                throttlingRateLimit: 2,
-                throttlingBurstLimit: 1,
+                throttlingRateLimit: props.environment === 'staging' ? 5 : 2,
+                throttlingBurstLimit: props.environment === 'staging' ? 3 : 1,
             },
             {
                 httpMethod: 'GET',
                 resourcePath: '/api/statuspages/public/{slug}',
-                throttlingRateLimit: 10,
-                throttlingBurstLimit: 5,
+                throttlingRateLimit: props.environment === 'staging' ? 20 : 10,
+                throttlingBurstLimit: props.environment === 'staging' ? 10 : 5,
             },
         ];
     }
