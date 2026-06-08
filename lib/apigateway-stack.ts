@@ -25,13 +25,15 @@ export class PulseApiGatewayStack extends cdk.Stack {
             anyMethod: true,
         });
 
-        const identity = api.root.addResource('api').addResource('identity');
+        const apiResource = api.root.addResource('api');
+
+        const identity = apiResource.addResource('identity');
         const login = identity.addResource('login');
         login.addMethod('POST', integration, {
             methodResponses: [{ statusCode: '200' }],
         });
 
-        const statuspages = api.root.addResource('api').addResource('statuspages');
+        const statuspages = apiResource.addResource('statuspages');
         const publicPages = statuspages.addResource('public');
         const slug = publicPages.addResource('{slug}');
         slug.addMethod('GET', integration, {
