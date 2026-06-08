@@ -3,20 +3,25 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as rds from 'aws-cdk-lib/aws-rds';
 import { Construct } from 'constructs';
 
+interface PulseRdsStackProps extends cdk.StackProps {
+    vpc: ec2.Vpc;
+    environment: 'dev' | 'staging' | 'prod';
+}
+
 export class PulseRdsStack extends cdk.Stack {
   public readonly db: rds.DatabaseInstance;
   public readonly securityGroup: ec2.SecurityGroup;
 
-  constructor(scope: Construct, id: string, props: cdk.StackProps & { vpc: ec2.Vpc }) {
+  constructor(scope: Construct, id: string, props: PulseRdsStackProps) {
     super(scope, id, props);
 
     this.securityGroup = new ec2.SecurityGroup(this, 'PulseRdsSG', {
       vpc: props.vpc,
-      description: 'Security group for Pulse RDS',
+      description: `Security group for Pulse RDS (${props.environment})`,
       allowAllOutbound: false,
     });
 
-    this.db = new rds.DatabaseInstance(this, 'PulsePostgres', {
+    this.db = new rds.DatabaseInstance(this, `PulsePostgres-${props.environment}`, {
       engine: rds.DatabaseInstanceEngine.postgres({
         version: rds.PostgresEngineVersion.VER_15,
       }),
