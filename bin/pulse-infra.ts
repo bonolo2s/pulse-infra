@@ -13,50 +13,48 @@ import { EventBridgeStack } from '../lib/eventbridge-stack';
 
 const app = new cdk.App();
 
-const PulseVpcStack_instance = new PulseVpcStack(app, 'PulseVpcStack', {
-  env: { account: '881005428470', region: 'eu-west-1' },
-});
+const environment = (app.node.tryGetContext('environment') ?? 'dev') as 'dev' | 'staging' | 'prod';
+const account = app.node.tryGetContext('account');
+const alertEmail = app.node.tryGetContext('alertEmail');
 
-const pulseEcsStack = new PulseEcsStack(app, 'PulseEcsStack', {
-    env: { account: '881005428470', region: 'eu-west-1' },
-    vpc: PulseVpcStack_instance.vpc,
-});
+const env = { account: account ?? process.env.CDK_DEFAULT_ACCOUNT, region: 'eu-west-1' };
 
-new PulseRdsStack(app, 'PulseRdsStack', {
-  env: { account: '881005428470', region: 'eu-west-1' },
-  vpc: PulseVpcStack_instance.vpc,
-});
+// SNS + SES deployed for all environments
+const snsStack = new PulseSnsStack(app, 'PulseSnsStack', { env, environment });
+new PulseSesStack(app, 'PulseSesStack', { env, environment, alertEmail });
 
-new PulseElastiCacheStack(app, 'PulseElastiCacheStack', {
-  env: { account: '881005428470', region: 'eu-west-1' },
-  vpc: PulseVpcStack_instance.vpc,
-});
+if (environment !== 'dev') {
+    const vpcStack = new PulseVpcStack(app, 'PulseVpcStack', { env, environment });
 
-const pulseLambdaStack = new PulseLambdaStack(app, 'PulseLambdaStack', {
-  env: { account: '881005428470', region: 'eu-west-1' },
-  vpc: PulseVpcStack_instance.vpc,
-});
+    const ecsStack = new PulseEcsStack(app, 'PulseEcsStack', {
+        env,
+        environment,
+        vpc: vpcStack.vpc,
+    });
 
-new EventBridgeStack(app, 'PulseEventBridgeStack', {
-  env: { account: '881005428470', region: 'eu-west-1' },
-  healthCheckFunction: pulseLambdaStack.healthCheckFunction,
-});
+    new PulseRdsStack(app, 'PulseRdsStack', { env, environment, vpc: vpcStack.vpc });
 
-new PulseApiGatewayStack(app, 'PulseApiGatewayStack', {
-    env: { account: '881005428470', region: 'eu-west-1' },
-    albDnsName: pulseEcsStack.loadBalancerDnsName,
-});
+    new PulseElastiCacheStack(app, 'PulseElastiCacheStack', { env, environment, vpc: vpcStack.vpc });
 
-new PulseSnsStack(app, 'PulseSnsStack', {
-  env: { account: '881005428470', region: 'eu-west-1' },
-});
+    const lambdaStack = new PulseLambdaStack(app, 'PulseLambdaStack', {
+        env,
+        environment,
+        vpc: vpcStack.vpc,
+    })
 
-new PulseSesStack(app, 'PulseSesStack', {
-  env: { account: '881005428470', region: 'eu-west-1' },
-});
+    new EventBridgeStack(app, 'PulseEventBridgeStack', {
+        env,
+        environment,
+        healthCheckFunction: lambdaStack.healthCheckFunction,
+    });
 
-new PulseObservabilityStack(app, 'PulseObservabilityStack', {
-  env: { account: '881005428470', region: 'eu-west-1' },
-});
+    new PulseApiGatewayStack(app, 'PulseApiGatewayStack', {
+        env,
+        environment,
+        albDnsName: ecsStack.loadBalancerDnsName,
+    });
+
+    new PulseObservabilityStack(app, 'PulseObservabilityStack', { env, environment });
+}
 
 cdk.Tags.of(app).add('Project', 'Pulse');
