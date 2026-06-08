@@ -8,9 +8,16 @@ import { Construct } from 'constructs';
 export class PulseEcsStack extends cdk.Stack {
     public readonly cluster: ecs.Cluster;
     public readonly loadBalancerDnsName: string;
+    public readonly securityGroup: ec2.SecurityGroup;
 
     constructor(scope: Construct, id: string, props: cdk.StackProps & { vpc: ec2.Vpc }) {
         super(scope, id, props);
+
+        this.securityGroup = new ec2.SecurityGroup(this, 'PulseEcsSG', {
+            vpc: props.vpc,
+            description: 'Security group for Pulse ECS',
+            allowAllOutbound: true,
+        });
 
         this.cluster = new ecs.Cluster(this, 'PulseCluster', {
             vpc: props.vpc,
@@ -38,6 +45,7 @@ export class PulseEcsStack extends cdk.Stack {
             cluster: this.cluster,
             taskDefinition,
             desiredCount: 1,
+            securityGroups: [this.securityGroup],
         });
 
         const alb = new elbv2.ApplicationLoadBalancer(this, 'PulseAlb', {
