@@ -5,17 +5,24 @@ import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import { Construct } from 'constructs';
 
+interface PulseEcsStackProps extends cdk.StackProps {
+    vpc: ec2.Vpc;
+    environment: 'dev' | 'staging' | 'prod';
+}
+
 export class PulseEcsStack extends cdk.Stack {
     public readonly cluster: ecs.Cluster;
     public readonly loadBalancerDnsName: string;
     public readonly securityGroup: ec2.SecurityGroup;
 
-    constructor(scope: Construct, id: string, props: cdk.StackProps & { vpc: ec2.Vpc }) {
+    constructor(scope: Construct, id: string, props: PulseEcsStackProps) {
         super(scope, id, props);
+
+        const isProd = props.environment === 'prod';
 
         this.securityGroup = new ec2.SecurityGroup(this, 'PulseEcsSG', {
             vpc: props.vpc,
-            description: 'Security group for Pulse ECS',
+            description: `Security group for Pulse ECS (${props.environment})`,
             allowAllOutbound: true,
         });
 
@@ -26,7 +33,7 @@ export class PulseEcsStack extends cdk.Stack {
         this.cluster.addCapacity('PulseEc2Capacity', {
             instanceType: ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.MICRO),
             minCapacity: 1,
-            maxCapacity: 1,
+            maxCapacity: isProd ? 4 : 1,
         });
 
         const taskDefinition = new ecs.Ec2TaskDefinition(this, 'PulseTaskDef');
@@ -38,7 +45,7 @@ export class PulseEcsStack extends cdk.Stack {
             memoryLimitMiB: 512,
             cpu: 256,
             portMappings: [{ containerPort: 8080 }],
-            logging: ecs.LogDrivers.awsLogs({ streamPrefix: 'pulse-api' }),
+            logging: ecs.LogDrivers.awsLogs({ streamPrefix: `pulse-api-${props.environment}` }),
         });
 
         const service = new ecs.Ec2Service(this, 'PulseService', {
@@ -54,7 +61,7 @@ export class PulseEcsStack extends cdk.Stack {
         });
 
         const listener = alb.addListener('PulseListener', {
-            port: 80,
+            port: isProd ? 443 : 80,
         });
 
         listener.addTargets('PulseTarget', {
