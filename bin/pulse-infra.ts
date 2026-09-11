@@ -28,7 +28,7 @@ if (environment !== 'dev') {
 
     new PulseRdsStack(app, `${environment}-PulseRdsStack`, { env, environment, vpc: vpcStack.vpc });
 
-    new PulseElastiCacheStack(app, `${environment}-PulseElastiCacheStack`, { env, environment, vpc: vpcStack.vpc });
+    // new PulseElastiCacheStack(app, `${environment}-PulseElastiCacheStack`, { env, environment, vpc: vpcStack.vpc });
 
     const ecsStack = new PulseEcsStack(app, `${environment}-PulseEcsStack`, {
         env,
