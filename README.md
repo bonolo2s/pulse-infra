@@ -79,6 +79,22 @@ SNS is the alert bus — it decouples failure detection from notification delive
 
 SES is email delivery. Today it sends downtime alerts. Tomorrow it could send login confirmations, billing receipts, or weekly reports. Keeping it separate means it can grow without touching the alerting pipeline.
 
+### SNS → SQS pivot
+
+The original pipeline was SNS → HTTP/HTTPS subscription, straight to the API. It broke.
+
+HTTP/HTTPS subscriptions require a handshake — SNS sends a confirmation request, the subscriber confirms it. That handshake never completed, and the subscription stayed stuck on `PendingConfirmation`.
+
+The fix was a pivot to SNS → SQS. SQS subscriptions auto-confirm — no handshake required.
+
+It also turned out to be an upgrade, not just a fix. SQS is persistent: if a downstream call fails, the message isn't lost — it can be retried.
+
+Two queues, two responsibilities:
+- **Results queue** — records health check results
+- **Notifications queue** — dispatches alerts to SES and other notification channels
+
+Both SQS queues are polled independently, each by its own dedicated BackgroundService hosted inside the API process — not external, unlike the Lambda health-check. Deliberate choice: if scale demands it, that's the seam where i'd split them out into separate hosted services/processes.
+
 ---
 
 ### No Route53
