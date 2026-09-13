@@ -10,6 +10,7 @@ import { PulseSnsStack } from '../lib/sns-stack';
 import { PulseSesStack } from '../lib/ses-stack';
 import { PulseObservabilityStack } from '../lib/observability-stack';
 import { EventBridgeStack } from '../lib/eventbridge-stack';
+import { PulseSqsStack } from '../lib/sqs-stack';
 
 const app = new cdk.App();
 
@@ -55,6 +56,12 @@ if (environment !== 'dev') {
     });
 
     new PulseObservabilityStack(app, `${environment}-PulseObservabilityStack`, { env, environment });
+
+    const sqsStack = new PulseSqsStack(app, `${environment}-PulseSqsStack`, {
+    env,
+    environment,
+    alertTopic: snsStack.alertTopic
+    });
 }
 
 cdk.Tags.of(app).add('Project', 'Pulse');
