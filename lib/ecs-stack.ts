@@ -23,8 +23,24 @@ export class PulseEcsStack extends cdk.Stack {
         this.securityGroup = new ec2.SecurityGroup(this, 'PulseEcsSG', {
             vpc: props.vpc,
             description: `Security group for Pulse ECS (${props.environment})`,
-            allowAllOutbound: true,
         });
+
+        const albSecurityGroup = new ec2.SecurityGroup(this, 'PulseAlbSG', {
+            vpc: props.vpc,
+            description: `Security group for Pulse ALB (${props.environment})`,
+        });
+
+        albSecurityGroup.addIngressRule(
+            ec2.Peer.anyIpv4(),
+            ec2.Port.tcp(isProd ? 443 : 80),
+            'Allow internet traffic to ALB'
+        );
+
+        this.securityGroup.addIngressRule(
+            albSecurityGroup,
+            ec2.Port.tcp(8080),
+            'Allow ALB to reach ECS'
+        );
 
         this.cluster = new ecs.Cluster(this, 'PulseCluster', {
             vpc: props.vpc,
@@ -58,6 +74,7 @@ export class PulseEcsStack extends cdk.Stack {
         const alb = new elbv2.ApplicationLoadBalancer(this, 'PulseAlb', {
             vpc: props.vpc,
             internetFacing: true,
+            securityGroup: albSecurityGroup,
         });
 
         const listener = alb.addListener('PulseListener', {
