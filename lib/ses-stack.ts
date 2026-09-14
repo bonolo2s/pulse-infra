@@ -8,11 +8,17 @@ interface PulseSesStackProps extends cdk.StackProps {
 }
 
 export class PulseSesStack extends cdk.Stack {
-  constructor(scope: Construct, id: string, props: PulseSesStackProps) {
-    super(scope, id, props);
+    public readonly identity: ses.EmailIdentity;
 
-    new ses.EmailIdentity(this, `PulseSesIdentity-${props.environment}`, {
-      identity: ses.Identity.email(props.alertEmail),
-    });
-  }
+    constructor(scope: Construct, id: string, props: PulseSesStackProps) {
+        super(scope, id, props);
+
+        this.identity = new ses.EmailIdentity(
+            this,
+            `PulseSesIdentity-${props.environment}`,
+            {
+                identity: ses.Identity.email(props.alertEmail),
+            }
+        );
+    }
 }
