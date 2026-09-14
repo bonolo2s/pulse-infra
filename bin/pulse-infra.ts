@@ -28,11 +28,19 @@ if (environment !== 'dev') {
     const vpcStack = new PulseVpcStack(app, `${environment}-PulseVpcStack`, { env, environment });
 
     // new PulseElastiCacheStack(app, `${environment}-PulseElastiCacheStack`, { env, environment, vpc: vpcStack.vpc });
-
+    const sqsStack = new PulseSqsStack(app, `${environment}-PulseSqsStack`, {
+        env,
+        environment,
+        alertTopic: snsStack.alertTopic
+    });
+    
     const ecsStack = new PulseEcsStack(app, `${environment}-PulseEcsStack`, {
         env,
         environment,
         vpc: vpcStack.vpc,
+        alertTopicArn: snsStack.alertTopic.topicArn,
+        recordResultsQueueArn: sqsStack.recordResultsQueue.queueArn,
+        notificationsQueueArn: sqsStack.notificationsQueue.queueArn,
     });
 
     new PulseRdsStack(app, `${environment}-PulseRdsStack`, {
@@ -61,12 +69,6 @@ if (environment !== 'dev') {
     });
 
     new PulseObservabilityStack(app, `${environment}-PulseObservabilityStack`, { env, environment });
-
-    const sqsStack = new PulseSqsStack(app, `${environment}-PulseSqsStack`, {
-    env,
-    environment,
-    alertTopic: snsStack.alertTopic
-    });
 }
 
 cdk.Tags.of(app).add('Project', 'Pulse');

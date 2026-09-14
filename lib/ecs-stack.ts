@@ -9,6 +9,9 @@ import { Construct } from 'constructs';
 interface PulseEcsStackProps extends cdk.StackProps {
     vpc: ec2.Vpc;
     environment: 'dev' | 'staging' | 'prod';
+    alertTopicArn: string;
+    recordResultsQueueArn: string;
+    notificationsQueueArn: string;
 }
 
 export class PulseEcsStack extends cdk.Stack {
@@ -72,10 +75,40 @@ export class PulseEcsStack extends cdk.Stack {
             ],
         });
 
-        // Permissions available to the Pulse API container
-        const taskRole = new iam.Role(this, 'PulseEcsTaskRole', {
-            assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
-        });
+    // Permissions available to the Pulse API container
+    const taskRole = new iam.Role(this, 'PulseEcsTaskRole', {
+        assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
+    });
+
+    taskRole.addToPolicy(new iam.PolicyStatement({
+        actions: [
+            'sns:Publish',
+        ],
+        resources: [
+            props.alertTopicArn,
+        ],
+    }));
+
+    taskRole.addToPolicy(new iam.PolicyStatement({
+        actions: [
+            'sqs:SendMessage',
+            'sqs:ReceiveMessage',
+            'sqs:DeleteMessage',
+            'sqs:GetQueueAttributes',
+        ],
+        resources: [
+            props.recordResultsQueueArn,
+            props.notificationsQueueArn,
+        ],
+    }));
+
+    taskRole.addToPolicy(new iam.PolicyStatement({
+        actions: [
+            'ses:SendEmail',
+            'ses:SendRawEmail',
+        ],
+        resources: ['*'],
+    }));
 
         const taskDefinition = new ecs.Ec2TaskDefinition(this, 'PulseTaskDef', {
             executionRole,
