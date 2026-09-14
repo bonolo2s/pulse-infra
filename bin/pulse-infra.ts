@@ -27,14 +27,19 @@ new PulseSesStack(app, `${environment}-PulseSesStack`, { env, environment, alert
 if (environment !== 'dev') {
     const vpcStack = new PulseVpcStack(app, `${environment}-PulseVpcStack`, { env, environment });
 
-    new PulseRdsStack(app, `${environment}-PulseRdsStack`, { env, environment, vpc: vpcStack.vpc });
-
     // new PulseElastiCacheStack(app, `${environment}-PulseElastiCacheStack`, { env, environment, vpc: vpcStack.vpc });
 
     const ecsStack = new PulseEcsStack(app, `${environment}-PulseEcsStack`, {
         env,
         environment,
         vpc: vpcStack.vpc,
+    });
+
+    new PulseRdsStack(app, `${environment}-PulseRdsStack`, {
+        env,
+        environment,
+        vpc: vpcStack.vpc,
+        ecsSecurityGroup: ecsStack.securityGroup
     });
 
     const lambdaStack = new PulseLambdaStack(app, `${environment}-PulseLambdaStack`, {
