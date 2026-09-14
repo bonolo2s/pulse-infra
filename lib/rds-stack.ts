@@ -6,6 +6,7 @@ import { Construct } from 'constructs';
 interface PulseRdsStackProps extends cdk.StackProps {
     vpc: ec2.Vpc;
     environment: 'dev' | 'staging' | 'prod';
+    ecsSecurityGroup: ec2.SecurityGroup;
 }
 
 export class PulseRdsStack extends cdk.Stack {
@@ -21,6 +22,12 @@ export class PulseRdsStack extends cdk.Stack {
       allowAllOutbound: false,
     });
 
+    this.securityGroup.addIngressRule(
+        props.ecsSecurityGroup,
+        ec2.Port.tcp(5432),
+        'Allow ECS to connect to PostgreSQL'
+    );
+    
     this.db = new rds.DatabaseInstance(this, `PulsePostgres-${props.environment}`, {
       engine: rds.DatabaseInstanceEngine.postgres({
         version: rds.PostgresEngineVersion.VER_15,
