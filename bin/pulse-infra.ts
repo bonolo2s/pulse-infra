@@ -22,7 +22,7 @@ const env = { account, region: 'eu-west-1' };
 
 // SNS + SES deployed for all environments
 const snsStack = new PulseSnsStack(app, `${environment}-PulseSnsStack`, { env, environment });
-new PulseSesStack(app, `${environment}-PulseSesStack`, { env, environment, alertEmail });
+// new PulseSesStack(app, `${environment}-PulseSesStack`, { env, environment, alertEmail });
 
 if (environment !== 'dev') {
     const vpcStack = new PulseVpcStack(app, `${environment}-PulseVpcStack`, { env, environment });
