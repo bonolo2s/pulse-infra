@@ -15,10 +15,7 @@ export class PulseLambdaStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props: PulseLambdaStackProps) {
         super(scope, id, props);
 
-        const repository = new ecr.Repository(this, 'PulseLambdaRepo', {
-            repositoryName: 'pulse-lambda',
-            removalPolicy: cdk.RemovalPolicy.DESTROY,
-        });
+        const repository = ecr.Repository.fromRepositoryName(this, 'PulseLambdaRepo', 'pulse-lambda');
 
         this.healthCheckFunction = new lambda.DockerImageFunction(this, 'PulseHealthCheck', {
             code: lambda.DockerImageCode.fromEcr(repository, { tagOrDigest: 'lambda-v1' }),
