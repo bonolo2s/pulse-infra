@@ -59,11 +59,10 @@ export class PulseEcsStack extends cdk.Stack {
             maxCapacity: isProd ? 4 : 1,
         });
 
-        const repository = ecr.Repository.fromRepositoryName(
-            this,
-            'PulseRepo',
-            'pulse-api'
-        );
+        const repository = new ecr.Repository(this, 'PulseRepo', {
+            repositoryName: 'pulse-api',
+            removalPolicy: cdk.RemovalPolicy.DESTROY,
+        });
 
         // ECS infrastructure permissions
         const executionRole = new iam.Role(this, 'PulseEcsExecutionRole', {
