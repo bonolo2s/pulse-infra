@@ -59,6 +59,8 @@ export class PulseEcsStack extends cdk.Stack {
             maxCapacity: isProd ? 4 : 1,
         });
 
+        this.cluster.connections.addSecurityGroup(this.securityGroup); // what this instacne, who does what this comes after my SG was rejectde on Service coz im using own EC2 type n not fargate
+
         const repository = new ecr.Repository(this, 'PulseRepo', {
             repositoryName: 'pulse-api',
             removalPolicy: cdk.RemovalPolicy.DESTROY,
@@ -128,7 +130,6 @@ export class PulseEcsStack extends cdk.Stack {
             cluster: this.cluster,
             taskDefinition,
             desiredCount: 1,
-            securityGroups: [this.securityGroup],
         });
 
         const alb = new elbv2.ApplicationLoadBalancer(this, 'PulseAlb', {
