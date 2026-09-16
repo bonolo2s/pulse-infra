@@ -1,25 +1,27 @@
 import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
-import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as ecr from 'aws-cdk-lib/aws-ecr';
 import { Construct } from 'constructs';
 
 interface PulseLambdaStackProps extends cdk.StackProps {
     vpc: ec2.Vpc;
     environment: 'dev' | 'staging' | 'prod';
-    logsBucket: s3.Bucket;
 }
 
 export class PulseLambdaStack extends cdk.Stack {
-    public readonly healthCheckFunction: lambda.Function;
+    public readonly healthCheckFunction: lambda.DockerImageFunction;
 
     constructor(scope: Construct, id: string, props: PulseLambdaStackProps) {
         super(scope, id, props);
 
-        this.healthCheckFunction = new lambda.Function(this, 'PulseHealthCheck', {
-            runtime: lambda.Runtime.DOTNET_9,
-            handler: 'Pulse.Lambda::Pulse.Lambda.HealthCheckFunction::FunctionHandler',
-            code: lambda.Code.fromBucket(props.logsBucket, 'lambda/lambda.zip'),
+        const repository = new ecr.Repository(this, 'PulseLambdaRepo', {
+            repositoryName: 'pulse-lambda',
+            removalPolicy: cdk.RemovalPolicy.DESTROY,
+        });
+
+        this.healthCheckFunction = new lambda.DockerImageFunction(this, 'PulseHealthCheck', {
+            code: lambda.DockerImageCode.fromEcr(repository, { tagOrDigest: 'lambda-v1' }),
             vpc: props.vpc,
             vpcSubnets: { subnetType: ec2.SubnetType.PUBLIC },
             allowPublicSubnet: true,

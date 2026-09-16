@@ -56,7 +56,6 @@ if (environment !== 'dev') {
         env,
         environment,
         vpc: vpcStack.vpc,
-        logsBucket: observabilityStack.logsBucket,
     });
 
     new EventBridgeStack(app, `${environment}-PulseEventBridgeStack`, {
