@@ -50,10 +50,13 @@ if (environment !== 'dev') {
         ecsSecurityGroup: ecsStack.securityGroup
     });
 
+    const observabilityStack = new PulseObservabilityStack(app, `${environment}-PulseObservabilityStack`, { env, environment });
+
     const lambdaStack = new PulseLambdaStack(app, `${environment}-PulseLambdaStack`, {
         env,
         environment,
         vpc: vpcStack.vpc,
+        logsBucket: observabilityStack.logsBucket,
     });
 
     new EventBridgeStack(app, `${environment}-PulseEventBridgeStack`, {
@@ -67,8 +70,6 @@ if (environment !== 'dev') {
         environment,
         albDnsName: ecsStack.loadBalancerDnsName,
     });
-
-    new PulseObservabilityStack(app, `${environment}-PulseObservabilityStack`, { env, environment });
 }
 
 cdk.Tags.of(app).add('Project', 'Pulse');

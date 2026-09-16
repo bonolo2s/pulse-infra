@@ -8,10 +8,12 @@ interface PulseObservabilityStackProps extends cdk.StackProps {
 }
 
 export class PulseObservabilityStack extends cdk.Stack {
+  public readonly logsBucket: s3.Bucket;
+
   constructor(scope: Construct, id: string, props: PulseObservabilityStackProps) {
     super(scope, id, props);
 
-    new s3.Bucket(this, 'PulseLogsBucket', {
+    this.logsBucket = new s3.Bucket(this, 'PulseLogsBucket', {
       bucketName: `pulse-logs-${props.environment}-${this.account}`,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       autoDeleteObjects: true,

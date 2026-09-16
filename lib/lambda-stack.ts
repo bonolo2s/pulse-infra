@@ -7,6 +7,7 @@ import { Construct } from 'constructs';
 interface PulseLambdaStackProps extends cdk.StackProps {
     vpc: ec2.Vpc;
     environment: 'dev' | 'staging' | 'prod';
+    logsBucket: s3.Bucket;
 }
 
 export class PulseLambdaStack extends cdk.Stack {
@@ -18,10 +19,7 @@ export class PulseLambdaStack extends cdk.Stack {
         this.healthCheckFunction = new lambda.Function(this, 'PulseHealthCheck', {
             runtime: lambda.Runtime.DOTNET_9,
             handler: 'Pulse.Lambda::Pulse.Lambda.HealthCheckFunction::FunctionHandler',
-            code: lambda.Code.fromBucket(
-                s3.Bucket.fromBucketName(this, 'LambdaBucket', 'pulse-logs-881005428470'),
-                'lambda/lambda.zip'
-            ),
+            code: lambda.Code.fromBucket(props.logsBucket, 'lambda/lambda.zip'),
             vpc: props.vpc,
             vpcSubnets: { subnetType: ec2.SubnetType.PUBLIC },
             allowPublicSubnet: true,
