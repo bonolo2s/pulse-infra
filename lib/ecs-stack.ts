@@ -4,6 +4,7 @@ import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as ssm from 'aws-cdk-lib/aws-ssm';
 import { Construct } from 'constructs';
 
 interface PulseEcsStackProps extends cdk.StackProps {
@@ -11,9 +12,10 @@ interface PulseEcsStackProps extends cdk.StackProps {
     environment: 'dev' | 'staging' | 'prod';
     alertTopicArn: string;
     recordResultsQueueArn: string;
+    recordResultsQueueUrl: string;
     notificationsQueueArn: string;
+    notificationsQueueUrl: string;
 }
-
 export class PulseEcsStack extends cdk.Stack {
     public readonly cluster: ecs.Cluster;
     public readonly loadBalancerDnsName: string;
@@ -121,9 +123,35 @@ export class PulseEcsStack extends cdk.Stack {
             memoryLimitMiB: 512,
             cpu: 256,
             portMappings: [{ containerPort: 8080 }],
-            logging: ecs.LogDrivers.awsLogs({
-                streamPrefix: `pulse-api-${props.environment}`,
-            }),
+            environment: {
+                ConnectionStrings__Redis: '',
+                Aws__Region: 'eu-west-1',
+                Aws__AccountId: '881005428470',
+                Aws__Sns__AlertTopicArn: props.alertTopicArn,
+                Aws__Sqs__RecordResultQueueUrl: props.recordResultsQueueUrl,
+                Aws__Sqs__TriggerAlertQueueUrl: props.notificationsQueueUrl,
+                Aws__Ses__FromAddress: 'noreply@pulse.dev',
+                Paystack__CallbackUrl: 'https://your-domain/billing',
+                Paystack__Plans__Pro: '450.00',
+                Paystack__Plans__ProCode: 'PLN_v1fpreihyn4n1nt',
+            },
+            secrets: {
+                ConnectionStrings__DefaultConnection: ecs.Secret.fromSsmParameter(
+                    ssm.StringParameter.fromSecureStringParameterAttributes(this, 'DbConnParam', {
+                        parameterName: '/pulse/staging/db-connection-string',
+                    })
+                ),
+                Jwt__SecretKey: ecs.Secret.fromSsmParameter(
+                    ssm.StringParameter.fromSecureStringParameterAttributes(this, 'JwtSecretParam', {
+                        parameterName: '/pulse/staging/jwt-secret',
+                    })
+                ),
+                Paystack__SecretKey: ecs.Secret.fromSsmParameter(
+                    ssm.StringParameter.fromSecureStringParameterAttributes(this, 'PaystackSecretParam', {
+                        parameterName: '/pulse/staging/paystack-secret',
+                    })
+                ),
+            },
         });
 
         const service = new ecs.Ec2Service(this, 'PulseService', {

@@ -40,9 +40,11 @@ if (environment !== 'dev') {
         vpc: vpcStack.vpc,
         alertTopicArn: snsStack.alertTopic.topicArn,
         recordResultsQueueArn: sqsStack.recordResultsQueue.queueArn,
+        recordResultsQueueUrl: sqsStack.recordResultsQueue.queueUrl,
         notificationsQueueArn: sqsStack.notificationsQueue.queueArn,
+        notificationsQueueUrl: sqsStack.notificationsQueue.queueUrl,
     });
-
+    
     new PulseRdsStack(app, `${environment}-PulseRdsStack`, {
         env,
         environment,
