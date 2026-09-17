@@ -50,7 +50,8 @@ export class PulseEcsStack extends cdk.Stack {
             vpc: props.vpc,
         });
 
-        this.cluster.addCapacity('PulseEc2Capacity', {
+        const asg = this.cluster.addCapacity('PulseEc2Capacity', { // ASG launches ec2 i need but fails to register them to ECS?
+
             instanceType: ec2.InstanceType.of(
                 ec2.InstanceClass.T3,
                 ec2.InstanceSize.MICRO
@@ -58,8 +59,10 @@ export class PulseEcsStack extends cdk.Stack {
             minCapacity: 1,
             maxCapacity: isProd ? 4 : 1,
         });
-
-        this.cluster.connections.addSecurityGroup(this.securityGroup); // what this instacne, who does what this comes after my SG was rejectde on Service coz im using own EC2 type n not fargate
+        asg.role.addManagedPolicy(
+            iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMManagedInstanceCore')
+        );
+        this.cluster.connections.addSecurityGroup(this.securityGroup); // all resources under this cluster will use this security group 
 
         const repository = ecr.Repository.fromRepositoryName(this, 'PulseRepo', 'pulse-api');
 

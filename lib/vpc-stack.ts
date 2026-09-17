@@ -14,7 +14,7 @@ export class PulseVpcStack extends cdk.Stack {
 
     this.vpc = new ec2.Vpc(this, `PulseVpc-${props.environment}`, {
       maxAzs: 2,
-      natGateways: 0,
+      natGateways: 1,
       subnetConfiguration: [
         {
           name: 'Public',
