@@ -117,7 +117,7 @@ export class PulseEcsStack extends cdk.Stack {
         });
 
         taskDefinition.addContainer('PulseApiContainer', {
-            image: ecs.ContainerImage.fromEcrRepository(repository),
+            image: ecs.ContainerImage.fromEcrRepository(repository, 'api-v1'),
             memoryLimitMiB: 512,
             cpu: 256,
             portMappings: [{ containerPort: 8080 }],
