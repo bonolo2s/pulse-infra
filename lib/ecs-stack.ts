@@ -157,7 +157,7 @@ export class PulseEcsStack extends cdk.Stack {
         const service = new ecs.Ec2Service(this, 'PulseService', {
             cluster: this.cluster,
             taskDefinition,
-            desiredCount: 1,
+            desiredCount: 0,// this vs Task in count.
         });
 
         const alb = new elbv2.ApplicationLoadBalancer(this, 'PulseAlb', {
