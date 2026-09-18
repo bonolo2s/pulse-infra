@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import * as cdk from 'aws-cdk-lib';
+import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import { PulseVpcStack } from '../lib/vpc-stack';
 import { PulseEcsStack } from '../lib/ecs-stack';
 import { PulseRdsStack } from '../lib/rds-stack';
@@ -11,6 +12,7 @@ import { PulseSesStack } from '../lib/ses-stack';
 import { PulseObservabilityStack } from '../lib/observability-stack';
 import { EventBridgeStack } from '../lib/eventbridge-stack';
 import { PulseSqsStack } from '../lib/sqs-stack';
+import { PulseSecurityGroupsStack } from '../lib/security-groups-stack';
 
 const app = new cdk.App();
 
@@ -27,29 +29,39 @@ const snsStack = new PulseSnsStack(app, `${environment}-PulseSnsStack`, { env, e
 if (environment !== 'dev') {
     const vpcStack = new PulseVpcStack(app, `${environment}-PulseVpcStack`, { env, environment });
 
+    const sgStack = new PulseSecurityGroupsStack(app, `${environment}-PulseSecurityGroupsStack`, {
+        env,
+        environment,
+        vpc: vpcStack.vpc,
+    });
+
     // new PulseElastiCacheStack(app, `${environment}-PulseElastiCacheStack`, { env, environment, vpc: vpcStack.vpc });
+
     const sqsStack = new PulseSqsStack(app, `${environment}-PulseSqsStack`, {
         env,
         environment,
         alertTopic: snsStack.alertTopic
     });
     
+    const rdsStack = new PulseRdsStack(app, `${environment}-PulseRdsStack`, {
+        env,
+        environment,
+        vpc: vpcStack.vpc,
+        securityGroup: sgStack.rdsSg,
+    });
+
     const ecsStack = new PulseEcsStack(app, `${environment}-PulseEcsStack`, {
         env,
         environment,
         vpc: vpcStack.vpc,
+        securityGroup: sgStack.ecsSg,
+        albSecurityGroup: sgStack.albSg,
         alertTopicArn: snsStack.alertTopic.topicArn,
         recordResultsQueueArn: sqsStack.recordResultsQueue.queueArn,
         recordResultsQueueUrl: sqsStack.recordResultsQueue.queueUrl,
         notificationsQueueArn: sqsStack.notificationsQueue.queueArn,
         notificationsQueueUrl: sqsStack.notificationsQueue.queueUrl,
-    });
-    
-    new PulseRdsStack(app, `${environment}-PulseRdsStack`, {
-        env,
-        environment,
-        vpc: vpcStack.vpc,
-        ecsSecurityGroup: ecsStack.securityGroup
+        db: rdsStack.db,
     });
 
     const observabilityStack = new PulseObservabilityStack(app, `${environment}-PulseObservabilityStack`, { env, environment });

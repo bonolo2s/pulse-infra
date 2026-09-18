@@ -6,11 +6,14 @@ import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import * as rds from 'aws-cdk-lib/aws-rds';
+import * as autoscaling from 'aws-cdk-lib/aws-autoscaling';
 import { Construct } from 'constructs';
 
 interface PulseEcsStackProps extends cdk.StackProps {
     vpc: ec2.Vpc;
     environment: 'dev' | 'staging' | 'prod';
+    securityGroup: ec2.SecurityGroup;
+    albSecurityGroup: ec2.SecurityGroup;
     alertTopicArn: string;
     recordResultsQueueArn: string;
     recordResultsQueueUrl: string;
@@ -28,49 +31,41 @@ export class PulseEcsStack extends cdk.Stack {
 
         const isProd = props.environment === 'prod';
 
-        this.securityGroup = new ec2.SecurityGroup(this, 'PulseEcsSG', {
-            vpc: props.vpc,
-            description: `Security group for Pulse ECS (${props.environment})`,
-        });
+        this.securityGroup = props.securityGroup;
 
-        const albSecurityGroup = new ec2.SecurityGroup(this, 'PulseAlbSG', {
-            vpc: props.vpc,
-            description: `Security group for Pulse ALB (${props.environment})`,
-        });
-
-        albSecurityGroup.addIngressRule(
-            ec2.Peer.anyIpv4(),
-            ec2.Port.tcp(isProd ? 443 : 80),
-            'Allow internet traffic to ALB'
-        );
-
-        this.securityGroup.addIngressRule(
-            albSecurityGroup,
-            ec2.Port.tcp(8080),
-            'Allow ALB to reach ECS'
-        );
+        const albSecurityGroup = props.albSecurityGroup;
 
         this.cluster = new ecs.Cluster(this, 'PulseCluster', {
             vpc: props.vpc,
         });
 
-        const asg = this.cluster.addCapacity('PulseEc2Capacity', { // ASG launches ec2 i need but fails to register them to ECS?
-
+        const asg = new autoscaling.AutoScalingGroup(this, 'PulseEc2Capacity', {
+            vpc: props.vpc,
             instanceType: ec2.InstanceType.of(
                 ec2.InstanceClass.T3,
                 ec2.InstanceSize.MICRO
             ),
+            machineImage: ecs.EcsOptimizedImage.amazonLinux2(),
             minCapacity: 1,
             maxCapacity: isProd ? 4 : 1,
+            securityGroup: this.securityGroup,
         });
+
+        const capacityProvider = new ecs.AsgCapacityProvider(this, 'PulseAsgCapacityProvider', {
+            autoScalingGroup: asg,
+        });
+
+        this.cluster.addAsgCapacityProvider(capacityProvider);
+
         asg.role.addManagedPolicy(
             iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonSSMManagedInstanceCore')
         );
-        this.cluster.connections.addSecurityGroup(this.securityGroup); // all resources under this cluster will use this security group 
+
+        this.cluster.connections.addSecurityGroup(this.securityGroup); // all resources under this cluster will use this security group ✔️ 
 
         const repository = ecr.Repository.fromRepositoryName(this, 'PulseRepo', 'pulse-api');
 
-        // ECS infrastructure permissions
+        // Permissions available for ecs agent in my ec2's
         const executionRole = new iam.Role(this, 'PulseEcsExecutionRole', {
             assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
             managedPolicies: [
@@ -140,6 +135,14 @@ export class PulseEcsStack extends cdk.Stack {
                 Paystack__CallbackUrl: 'https://pulse-endpoint-monitor.netlify.app/billing',
                 Paystack__Plans__Pro: '450.00',
                 Paystack__Plans__ProCode: 'PLN_v1fpreihyn4n1nt',
+                Jwt__Issuer: 'Pulse',
+                Jwt__Audience: 'PulseUsers',
+                Jwt__ExpiryMinutes: '60',
+                Jwt__RefreshTokenExpiryDays: '7',
+                Billing__SweepIntervalMinutes: '5',
+                Billing__RenewalSweepIntervalMinutes: '5',
+                Billing__VerifyFallbackThresholdMinutes: '15',
+                Billing__VerifyFallbackSweepIntervalMinutes: '5',
             },
 
             secrets: {
@@ -164,7 +167,7 @@ export class PulseEcsStack extends cdk.Stack {
         const service = new ecs.Ec2Service(this, 'PulseService', {
             cluster: this.cluster,
             taskDefinition,
-            desiredCount: 0,// this vs Task in count.
+            desiredCount: 1,// of my workers/containers
         });
 
         const alb = new elbv2.ApplicationLoadBalancer(this, 'PulseAlb', {
