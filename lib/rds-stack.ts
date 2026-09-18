@@ -1,6 +1,7 @@
 import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as rds from 'aws-cdk-lib/aws-rds';
+import * as ssm from 'aws-cdk-lib/aws-ssm';
 import { Construct } from 'constructs';
 
 interface PulseRdsStackProps extends cdk.StackProps {
@@ -39,6 +40,11 @@ export class PulseRdsStack extends cdk.Stack {
       multiAz: false,
       allocatedStorage: 20,
       deletionProtection: false,
+      databaseName: 'pulse',
+      credentials: rds.Credentials.fromPassword(
+        'postgres',
+        cdk.SecretValue.ssmSecure('/pulse/staging/db-password')
+      ),
     });
   }
 }

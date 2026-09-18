@@ -5,6 +5,7 @@ import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
+import * as rds from 'aws-cdk-lib/aws-rds';
 import { Construct } from 'constructs';
 
 interface PulseEcsStackProps extends cdk.StackProps {
@@ -15,6 +16,7 @@ interface PulseEcsStackProps extends cdk.StackProps {
     recordResultsQueueUrl: string;
     notificationsQueueArn: string;
     notificationsQueueUrl: string;
+    db: rds.DatabaseInstance;
 }
 export class PulseEcsStack extends cdk.Stack {
     public readonly cluster: ecs.Cluster;
@@ -124,6 +126,10 @@ export class PulseEcsStack extends cdk.Stack {
             cpu: 256,
             portMappings: [{ containerPort: 8080 }],
             environment: {
+                ConnectionStrings__DefaultConnection__Host: props.db.dbInstanceEndpointAddress,
+                ConnectionStrings__DefaultConnection__Port: props.db.dbInstanceEndpointPort,
+                ConnectionStrings__DefaultConnection__Database: 'pulse',
+                ConnectionStrings__DefaultConnection__Username: 'postgres',
                 ConnectionStrings__Redis: '',
                 Aws__Region: 'eu-west-1',
                 Aws__AccountId: '881005428470',
@@ -133,12 +139,13 @@ export class PulseEcsStack extends cdk.Stack {
                 Aws__Ses__FromAddress: 'noreply@pulse.dev',
                 Paystack__CallbackUrl: 'https://pulse-endpoint-monitor.netlify.app/billing',
                 Paystack__Plans__Pro: '450.00',
-                Paystack__Plans__ProCode: 'PLN_v1fpreihyn4n1nt', // cant i put them in secretes
+                Paystack__Plans__ProCode: 'PLN_v1fpreihyn4n1nt',
             },
+
             secrets: {
-                ConnectionStrings__DefaultConnection: ecs.Secret.fromSsmParameter(
-                    ssm.StringParameter.fromSecureStringParameterAttributes(this, 'DbConnParam', {
-                        parameterName: '/pulse/staging/db-connection-string',
+                ConnectionStrings__DefaultConnection__Password: ecs.Secret.fromSsmParameter(
+                    ssm.StringParameter.fromSecureStringParameterAttributes(this, 'DbPasswordParam', {
+                        parameterName: '/pulse/staging/db-password',
                     })
                 ),
                 Jwt__SecretKey: ecs.Secret.fromSsmParameter(
