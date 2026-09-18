@@ -115,7 +115,7 @@ export class PulseEcsStack extends cdk.Stack {
             taskRole,
         });
 
-        taskDefinition.addContainer('PulseApiContainer', {
+        const apiContainer = taskDefinition.addContainer('PulseApiContainer', {
             image: ecs.ContainerImage.fromEcrRepository(repository, 'api-v1'),
             memoryLimitMiB: 512,
             cpu: 256,
@@ -162,6 +162,31 @@ export class PulseEcsStack extends cdk.Stack {
                     })
                 ),
             },
+        });
+
+        const migrationContainer = taskDefinition.addContainer('PulseMigrationContainer', {
+            image: ecs.ContainerImage.fromEcrRepository(repository, 'migrate'),
+            memoryLimitMiB: 256,
+            cpu: 128,
+            essential: false,
+            environment: {
+                ConnectionStrings__DefaultConnection__Host: props.db.dbInstanceEndpointAddress,
+                ConnectionStrings__DefaultConnection__Port: props.db.dbInstanceEndpointPort,
+                ConnectionStrings__DefaultConnection__Database: 'pulse',
+                ConnectionStrings__DefaultConnection__Username: 'postgres',
+            },
+            secrets: {
+                ConnectionStrings__DefaultConnection__Password: ecs.Secret.fromSsmParameter(
+                    ssm.StringParameter.fromSecureStringParameterAttributes(this, 'MigrateDbPasswordParam', {
+                        parameterName: '/pulse/staging/db-password',
+                    })
+                ),
+            },
+        });
+
+        apiContainer.addContainerDependencies({
+            container: migrationContainer,
+            condition: ecs.ContainerDependencyCondition.SUCCESS,
         });
 
         const service = new ecs.Ec2Service(this, 'PulseService', {
