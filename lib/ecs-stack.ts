@@ -131,9 +131,9 @@ export class PulseEcsStack extends cdk.Stack {
                 Aws__Sqs__RecordResultQueueUrl: props.recordResultsQueueUrl,
                 Aws__Sqs__TriggerAlertQueueUrl: props.notificationsQueueUrl,
                 Aws__Ses__FromAddress: 'noreply@pulse.dev',
-                Paystack__CallbackUrl: 'https://your-domain/billing',
+                Paystack__CallbackUrl: 'https://pulse-endpoint-monitor.netlify.app/billing',
                 Paystack__Plans__Pro: '450.00',
-                Paystack__Plans__ProCode: 'PLN_v1fpreihyn4n1nt',
+                Paystack__Plans__ProCode: 'PLN_v1fpreihyn4n1nt', // cant i put them in secretes
             },
             secrets: {
                 ConnectionStrings__DefaultConnection: ecs.Secret.fromSsmParameter(
