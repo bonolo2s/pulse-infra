@@ -22,26 +22,60 @@ export class PulseApiGatewayStack extends cdk.Stack {
 
         const integration = new apigateway.HttpIntegration(
             `http://${props.albDnsName}/{proxy}`,
-            { httpMethod: 'ANY', proxy: true }
+            {
+                httpMethod: 'ANY',
+                proxy: true,
+                options: {
+                    requestParameters: {
+                        'integration.request.path.proxy': 'method.request.path.proxy',
+                    },
+                },
+            }
         );
 
         api.root.addProxy({
             defaultIntegration: integration,
             anyMethod: true,
+            defaultMethodOptions: {
+                requestParameters: {
+                    'method.request.path.proxy': true,
+                },
+            },
         });
 
         const apiResource = api.root.addResource('api');
 
         const identity = apiResource.addResource('identity');
         const login = identity.addResource('login');
-        login.addMethod('POST', integration, {
+
+        const loginIntegration = new apigateway.HttpIntegration(
+            `http://${props.albDnsName}/api/identity/login`,
+            { httpMethod: 'POST', proxy: true }
+        );
+        login.addMethod('POST', loginIntegration, {
             methodResponses: [{ statusCode: '200' }],
         });
 
         const statuspages = apiResource.addResource('statuspages');
         const publicPages = statuspages.addResource('public');
         const slug = publicPages.addResource('{slug}');
-        slug.addMethod('GET', integration, {
+
+        const slugIntegration = new apigateway.HttpIntegration(
+            `http://${props.albDnsName}/api/statuspages/public/{slug}`,
+            {
+                httpMethod: 'GET',
+                proxy: true,
+                options: {
+                    requestParameters: {
+                        'integration.request.path.slug': 'method.request.path.slug',
+                    },
+                },
+            }
+        );
+        slug.addMethod('GET', slugIntegration, {
+            requestParameters: {
+                'method.request.path.slug': true,
+            },
             methodResponses: [{ statusCode: '200' }],
         });
 
