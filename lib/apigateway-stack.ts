@@ -84,14 +84,14 @@ export class PulseApiGatewayStack extends cdk.Stack {
             {
                 httpMethod: 'POST',
                 resourcePath: '/api/identity/login',
-                throttlingRateLimit: props.environment === 'staging' ? 5 : 2,
-                throttlingBurstLimit: props.environment === 'staging' ? 3 : 1,
+                throttlingRateLimit: props.environment === 'staging' ? 5 : 10,
+                throttlingBurstLimit: props.environment === 'staging' ? 3 : 20,
             },
             {
                 httpMethod: 'GET',
                 resourcePath: '/api/statuspages/public/{slug}',
-                throttlingRateLimit: props.environment === 'staging' ? 20 : 10,
-                throttlingBurstLimit: props.environment === 'staging' ? 10 : 5,
+                throttlingRateLimit: props.environment === 'staging' ? 20 : 50,
+                throttlingBurstLimit: props.environment === 'staging' ? 10 : 100,
             },
         ];
     }
