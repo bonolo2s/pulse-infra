@@ -23,7 +23,7 @@ export class PulseVpcStack extends cdk.Stack {
         },
         {
           name: 'Private',
-          subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
+          subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS, // gives default route to NAT gateway for internet access/ outbound.
           cidrMask: 24,
         },
       ],
