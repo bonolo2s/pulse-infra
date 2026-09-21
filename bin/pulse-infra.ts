@@ -70,6 +70,9 @@ if (environment !== 'dev') {
         env,
         environment,
         vpc: vpcStack.vpc,
+        securityGroup: sgStack.lambdaSg,
+        alertTopicArn: snsStack.alertTopic.topicArn,
+        db: rdsStack.db,
     });
 
     new EventBridgeStack(app, `${environment}-PulseEventBridgeStack`, {

@@ -11,6 +11,7 @@ export class PulseSecurityGroupsStack extends cdk.Stack {
     public readonly ecsSg: ec2.SecurityGroup;
     public readonly rdsSg: ec2.SecurityGroup;
     public readonly albSg: ec2.SecurityGroup;
+    public readonly lambdaSg: ec2.SecurityGroup;
 
     constructor(scope: Construct, id: string, props: PulseSecurityGroupsStackProps) {
         super(scope, id, props);
@@ -33,7 +34,13 @@ export class PulseSecurityGroupsStack extends cdk.Stack {
             description: `Security group for Pulse ALB (${props.environment})`,
         });
 
+        this.lambdaSg = new ec2.SecurityGroup(this, 'PulseLambdaSG', {
+            vpc: props.vpc,
+            description: `Security group for Pulse Lambda (${props.environment})`,
+        });
+
         this.rdsSg.addIngressRule(this.ecsSg, ec2.Port.tcp(5432), 'Allow ECS to connect to PostgreSQL');
+        this.rdsSg.addIngressRule(this.lambdaSg, ec2.Port.tcp(5432), 'Allow Lambda to connect to PostgreSQL');
 
         this.albSg.addIngressRule(
             ec2.Peer.anyIpv4(),
