@@ -43,7 +43,7 @@ export class PulseEcsStack extends cdk.Stack {
             vpc: props.vpc,
             instanceType: ec2.InstanceType.of(
                 ec2.InstanceClass.T3,
-                ec2.InstanceSize.MICRO
+                ec2.InstanceSize.SMALL
             ),
             machineImage: ecs.EcsOptimizedImage.amazonLinux2(),
             minCapacity: 1,
@@ -117,7 +117,7 @@ export class PulseEcsStack extends cdk.Stack {
 
         const apiContainer = taskDefinition.addContainer('PulseApiContainer', {
             image: ecs.ContainerImage.fromEcrRepository(repository, 'api-v1'),
-            memoryLimitMiB: 512,
+            memoryLimitMiB: 900,
             cpu: 256,
             portMappings: [{ containerPort: 8080 }],
             environment: {
@@ -166,7 +166,7 @@ export class PulseEcsStack extends cdk.Stack {
 
         const migrationContainer = taskDefinition.addContainer('PulseMigrationContainer', {
             image: ecs.ContainerImage.fromEcrRepository(repository, 'migrate'),
-            memoryLimitMiB: 256,
+            memoryLimitMiB: 600,
             cpu: 128,
             essential: false,
             environment: {

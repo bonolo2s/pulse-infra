@@ -14,11 +14,12 @@ export class EventBridgeStack extends cdk.Stack {
         super(scope, id, props);
 
         const intervals = [
-            { name: '1min',  schedule: events.Schedule.rate(cdk.Duration.minutes(1)),  seconds: 60 },
+            // { name: '1min',  schedule: events.Schedule.rate(cdk.Duration.minutes(1)),  seconds: 60 },
+            { name: '3min',  schedule: events.Schedule.rate(cdk.Duration.minutes(3)),  seconds: 180 },
             { name: '5min',  schedule: events.Schedule.rate(cdk.Duration.minutes(5)),  seconds: 300 },
-            { name: '10min', schedule: events.Schedule.rate(cdk.Duration.minutes(10)), seconds: 600 },
-            { name: '15min', schedule: events.Schedule.rate(cdk.Duration.minutes(15)), seconds: 900 },
-            { name: '30min', schedule: events.Schedule.rate(cdk.Duration.minutes(30)), seconds: 1800 },
+            // { name: '10min', schedule: events.Schedule.rate(cdk.Duration.minutes(10)), seconds: 600 },
+            // { name: '15min', schedule: events.Schedule.rate(cdk.Duration.minutes(15)), seconds: 900 },
+            // { name: '30min', schedule: events.Schedule.rate(cdk.Duration.minutes(30)), seconds: 1800 },
             { name: '1hour', schedule: events.Schedule.rate(cdk.Duration.hours(1)),    seconds: 3600 },
         ];
 
