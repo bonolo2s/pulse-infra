@@ -13,6 +13,7 @@ export class PulseApiGatewayStack extends cdk.Stack {
 
         const api = new apigateway.RestApi(this, 'PulseApi', {
             restApiName: `Pulse API (${props.environment})`,
+            //deployOptions: { stageName: props.environment }, // id need this for different stages(dev, stage , prod ), if wasnt splitting by stack
             description: 'API Gateway for Pulse endpoint monitoring platform',
             defaultCorsPreflightOptions: {
                 allowOrigins: apigateway.Cors.ALL_ORIGINS,
